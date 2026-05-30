@@ -48,6 +48,14 @@ export default function App() {
     setStrokeCount(0);
   }, []);
 
+  const handleRemoveStrokes = useCallback((strokeIds: string[]) => {
+    setStrokes((prev) => {
+      const remaining = prev.filter((s) => !strokeIds.includes(s.id));
+      setStrokeCount(remaining.length);
+      return remaining;
+    });
+  }, []);
+
   const handleSave = useCallback(() => {
     const dataURL = canvasRef.current?.getDataURL();
     if (!dataURL) return;
@@ -136,6 +144,7 @@ export default function App() {
             toolbarState={toolbar}
             strokes={strokes}
             onStrokeAdd={handleStrokeAdd}
+            onStrokesRemove={handleRemoveStrokes}
             onClear={handleClear}
           />
 
@@ -153,7 +162,7 @@ export default function App() {
               <div className="text-center space-y-3">
                 <div className="text-6xl opacity-30">✋</div>
                 <p className="text-slate-500 text-lg font-medium">Move your hand to draw</p>
-                <p className="text-slate-600 text-sm">Point your index finger at the camera</p>
+                <p className="text-slate-600 text-sm">Extend index finger to draw, make a fist to erase</p>
               </div>
             </div>
           )}

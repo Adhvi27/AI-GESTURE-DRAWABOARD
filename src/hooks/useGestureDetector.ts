@@ -61,19 +61,37 @@ export function useGestureDetector(
       };
     }
 
-    // Determine drawing mode: index finger extended = draw
+    // Detect hand gesture: index finger extended = draw, fist = erase
     const indexTipY = landmarks[8].y;
     const indexPipY = landmarks[6].y;
     const isIndexUp = indexTipY < indexPipY;
 
-    const mode = isIndexUp ? 'draw' : 'idle';
+    // Fist detection: all fingers curled (fingertips below knuckles)
+    const thumbTipY = landmarks[4].y;
+    const thumbPipY = landmarks[3].y;
+    const isThumbCurled = thumbTipY > thumbPipY;
+
+    const middleTipY = landmarks[12].y;
+    const middlePipY = landmarks[10].y;
+    const isMiddleCurled = middleTipY > middlePipY;
+
+    const ringTipY = landmarks[16].y;
+    const ringPipY = landmarks[14].y;
+    const isRingCurled = ringTipY > ringPipY;
+
+    const pinkyTipY = landmarks[20].y;
+    const pinkyPipY = landmarks[18].y;
+    const isPinkyCurled = pinkyTipY > pinkyPipY;
+
+    const isFist = isIndexUp === false && isThumbCurled && isMiddleCurled && isRingCurled && isPinkyCurled;
+    const mode = isFist ? 'erase' : isIndexUp ? 'draw' : 'idle';
 
     onGestureUpdate({
       mode,
       fingertip: smoothingRef.current,
       isTracking: true,
       confidence,
-      gesture: isIndexUp ? 'draw' : 'none',
+      gesture: isFist ? 'fist' : isIndexUp ? 'draw' : 'none',
     });
   }, [onGestureUpdate]);
 

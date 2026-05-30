@@ -6,6 +6,7 @@ interface Props {
   toolbarState: ToolbarState;
   strokes: Stroke[];
   onStrokeAdd: (stroke: Stroke) => void;
+  onStrokesRemove?: (strokeIds: string[]) => void;
   onClear: () => void;
 }
 
@@ -15,7 +16,7 @@ export interface GestureCanvasHandle {
 }
 
 export const GestureCanvas = forwardRef<GestureCanvasHandle, Props>(
-  ({ gestureState, toolbarState, strokes, onStrokeAdd }, ref) => {
+  ({ gestureState, toolbarState, strokes, onStrokeAdd, onStrokesRemove }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const overlayRef = useRef<HTMLCanvasElement>(null);
     const currentStrokeRef = useRef<Point[]>([]);
@@ -186,7 +187,7 @@ export const GestureCanvas = forwardRef<GestureCanvasHandle, Props>(
       const py = fingertip.y * canvas.height;
 
       // Draw cursor overlay
-      const cursorColor = '#38bdf8';
+      const cursorColor = mode === 'erase' ? '#ef4444' : '#38bdf8';
       octx.clearRect(0, 0, overlay.width, overlay.height);
       octx.beginPath();
       octx.arc(px, py, 12, 0, Math.PI * 2);
@@ -215,10 +216,33 @@ export const GestureCanvas = forwardRef<GestureCanvasHandle, Props>(
           ctx.stroke();
         }
         lastFingertipRef.current = mirroredPoint;
+      } else if (mode === 'erase') {
+        // Erase strokes that touch the cursor
+        const eraserRadius = 15;
+        const erasedIds = new Set<string>();
+        const mirroredPoint = { x: 1 - fingertip.x, y: fingertip.y };
+
+        for (const stroke of strokes) {
+          for (const pt of stroke.points) {
+            const dx = (pt.x - mirroredPoint.x) * canvas.width;
+            const dy = (pt.y - mirroredPoint.y) * canvas.height;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < eraserRadius) {
+              erasedIds.add(stroke.id);
+              break;
+            }
+          }
+        }
+
+        if (erasedIds.size > 0) {
+          onStrokesRemove?.(Array.from(erasedIds));
+        }
+
+        lastFingertipRef.current = null;
       } else {
         lastFingertipRef.current = null;
       }
-    }, [gestureState, toolbarState, onStrokeAdd]);
+    }, [gestureState, toolbarState, onStrokeAdd, strokes, onStrokesRemove]);
 
     return (
       <div className="relative w-full h-full select-none">
