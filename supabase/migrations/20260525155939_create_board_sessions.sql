@@ -1,7 +1,7 @@
 /*
   # Create board_sessions table
 
-  ## Summary
+
   Stores saved whiteboard sessions from AirBoard. Each session captures metadata
   and a snapshot of the drawing at time of save.
 
